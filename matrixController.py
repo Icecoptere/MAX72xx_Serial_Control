@@ -3,10 +3,13 @@ import serial
 from time import sleep as sl
 from random import randint as rand
 
+ser = None
 # Size of the Matrix MxN
 M = 8
 N = 32
-
+# Minimum sleep time seems to be 0.008
+DELAY_TIME = 0.01
+NB_STEPS = 100
 # Initialize the matrix values to 0
 leds_matrix_values = [[0 for i in range(M)] for j in range(N)]
 
@@ -50,28 +53,44 @@ def shiftMatrix(theMatrix, leftDirection=True):
         return theMatrix[-1:] + theMatrix[0:-1]
 
 
-serialOrder = convertFromMatrixToString(leds_matrix_values)
-mode = 2
-if mode == 1:
-    leds_matrix_values = getIncreaseDecreaseMatrix(leds_matrix_values)
-else:
-    leds_matrix_values = randomizeMatrix(leds_matrix_values)
+def initConnection():
+    global ser
+    bauds = 500000
+    port = 'COM3'
+    ser = serial.Serial(port, bauds)
+    sl(3)
 
-bauds = 500000
-port = 'COM3'
-ser = serial.Serial(port, bauds)
-sl(3)
-
-# Minimum sleep time seems to be 0.08
-sleepTime = 0.1
-
-# Loop with a certain number of steps to write on the Serial and modify the matrix
-nbSteps = 1000
-for i in range(nbSteps):
-    ser.write(serialOrder)
-    leds_matrix_values = shiftMatrix(leds_matrix_values, False)
-    serialOrder = convertFromMatrixToString(leds_matrix_values)
-    sl(sleepTime)
 
 # Closing the connection
-ser.close()
+def closeConnection():
+    global ser
+    ser.close()
+
+
+def sendMatrix(theMatrix):
+    global ser
+    if ser is None:
+        initConnection()
+    ser.write(convertFromMatrixToString(theMatrix))
+
+
+# Loop with a certain number of steps to write on the Serial and modify the matrix
+def doCycle(t, nbSteps, theMatrix):
+    for i in range(nbSteps):
+        theMatrix = shiftMatrix(theMatrix, True)
+        sendMatrix(theMatrix)
+        sl(t)
+
+
+def doStandardCycle():
+    doCycle(DELAY_TIME, NB_STEPS, getIncreaseDecreaseMatrix(leds_matrix_values))
+
+
+def doOtherCycle():
+    doCycle(DELAY_TIME, NB_STEPS, randomizeMatrix(leds_matrix_values))
+
+
+if __name__ == "__main__":
+    initConnection()
+    doCycle(DELAY_TIME, NB_STEPS, leds_matrix_values)
+    closeConnection()
