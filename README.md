@@ -3,7 +3,7 @@ Control a 8x32 led Matrix with an Arduino Uno, on the Serial port.
 Currently done : 
   - A Python script sends data to update the matrix to the Serial port
   - The connected Arduino Uno is reading this data and updating the matrix accordingly
-
+  - The Python script hosts a Flask server and hosts a web page at http://localhost:9009/ on which there are two buttons to change the display of the matrix through WebSocket
 
 Material required : 
   - A compatible Arduino (Uno...)
